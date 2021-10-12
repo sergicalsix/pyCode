@@ -3,23 +3,31 @@ import random
 
 def main():
     total_time = 1000
-    n_firefly = 20
+    n_firefly = 100
     T = 10
     eps = 1
     #stateとnetworkの作成
     state = [0] * n_firefly
     network = [0] * n_firefly
-    max_edge_num = 5
+    max_edge_num = 10
 
     random.seed(2021)
     for i in range(n_firefly):
         each_state = random.randint(0,T-eps)
         state[i]  = each_state
 
-        edge_num = random.randint(1,max_edge_num)
-        network[i] = rand_ints_nodup(0,n_firefly-1, edge_num)
+        network[i] = [(i+1)% n_firefly, (i+2)% n_firefly , (i+3)% n_firefly]
 
+        #ランダムにエッジをはる ->　全ノードが結合されていないとうまくいかない
+        #edge_num = random.randint(3,max_edge_num)
+        #network[i] = rand_ints_nodup(0,n_firefly-1, edge_num)
 
+    model_firefly =  FireFlies(T = T ,eps = eps ,state = state ,network = network)
+
+    for t in range(total_time):
+        model_firefly()
+        if t % 10:
+            print(model_firefly.state)
 
 def rand_ints_nodup(a, b, k):
      ns = []
@@ -42,17 +50,19 @@ class FireFlies():
         self.T = T
         self.eps = eps
         self.state = np.array(state)
+        self.network = network
+
         self.n_move:list = np.array([0] * len(state))
 
 
-    def run(self):
-        state += self.eps
+    def __call__(self):
+        self.state += self.eps
         self.checker()
 
     def checker(self):
         state_full_flies = []
         for i,s in enumerate(self.state):
-            if s == 1:
+            if s == self.T:
                 self.n_move[i] += 1
                 state_full_flies.append(i)
 
@@ -61,11 +71,21 @@ class FireFlies():
             self.synchro(idx)
 
     def synchro(self,idx):
-        each_n_move =  self.n_move
+        from_n_move =  self.n_move[idx]
+        state_sign = 0
         for i in self.network[idx]:
+            to_n_move = self.n_move[i]
+            if from_n_move > to_n_move:#早い
+                state_sign += -1
+            elif from_n_move < to_n_move:
+                state_sign += 1
+
+        self.state[idx] += np.sign(state_sign) * self.eps
+
+#    def synchro_score(self):
 
 
 
 
-if '__name__'== main:
+if __name__ == '__main__':
     main()
