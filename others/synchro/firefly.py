@@ -1,9 +1,14 @@
 import numpy as np
 import random
+import networkx as nx
+import matplotlib.pyplot as plt
+
+
+
 
 def main():
     total_time = 1000
-    n_firefly = 100
+    n_firefly = 10
     T = 10
     eps = 1
     #stateとnetworkの作成
@@ -11,16 +16,23 @@ def main():
     network = [0] * n_firefly
     max_edge_num = 10
 
+    G = nx.DiGraph()  # 有向グラフ (Directed Graph)
     random.seed(2021)
     for i in range(n_firefly):
         each_state = random.randint(0,T-eps)
         state[i]  = each_state
 
-        network[i] = [(i+1)% n_firefly, (i+2)% n_firefly , (i+3)% n_firefly]
+        #network[i] = [(i+1)% n_firefly, (i+2)% n_firefly , (i+3)% n_firefly]
 
         #ランダムにエッジをはる ->　全ノードが結合されていないとうまくいかない
-        #edge_num = random.randint(3,max_edge_num)
-        #network[i] = rand_ints_nodup(0,n_firefly-1, edge_num)
+        edge_num = random.randint(8,max_edge_num)
+        network[i] = rand_ints_nodup(0,n_firefly-1, edge_num)
+        for j in network[i]:
+            G.add_edge(i,j)
+    nx.draw_networkx(G)
+    #plt.show()
+    plt.savefig('random_network.pdf')
+    plt.close()
 
     model_firefly =  FireFlies(T = T ,eps = eps ,state = state ,network = network)
 
@@ -81,9 +93,6 @@ class FireFlies():
                 state_sign += 1
 
         self.state[idx] += np.sign(state_sign) * self.eps
-
-#    def synchro_score(self):
-
 
 
 
