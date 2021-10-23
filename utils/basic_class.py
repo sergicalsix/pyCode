@@ -1,5 +1,10 @@
 import datetime
 
+import sys
+sys.path.append("~/myGitHub/pyCode/utils")
+print(sys.path)
+
+from basic_class import *
 
 class Timer():
     def __init__(self):

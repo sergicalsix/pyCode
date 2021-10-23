@@ -2,12 +2,14 @@ from typing import List, Dict , Tuple , Optional, Union, Callable, Iterator
 
 #基本的な使い方
 a: List[int] = [1,2]
-b: Dict[str,int] = ["a", 1]
+b: Dict[str,int] = {"a", 1}
+c: Dict[str,List] = {'a':[11,22]}
 #Noneの許容
 x: Optional[str] = None
 # 2つのいずれかの型を許容する場合
 x: Union[int, str] = 2
 
+print(type(c),c)
 
 
 # 基本的な関数の引数、返り値への型ヒント
