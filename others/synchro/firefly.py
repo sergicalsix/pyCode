@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 
 def main():
     total_time = 1000
-    n_firefly = 10
+    n_firefly = 100
     T = 10
     eps = 1
     #stateとnetworkの作成
@@ -29,6 +29,7 @@ def main():
         network[i] = rand_ints_nodup(0,n_firefly-1, edge_num)
         for j in network[i]:
             G.add_edge(i,j)
+            G.add_edge(j,i)
     nx.draw_networkx(G)
     #plt.show()
     plt.savefig('random_network.pdf')
