@@ -14,9 +14,9 @@
 
 登場人物:
 
--
--
--
+- Model
+- Serialize
+- View
 
 
 ## 2章　モデル
