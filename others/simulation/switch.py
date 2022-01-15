@@ -7,12 +7,12 @@ plt.style.use('ggplot')
 
 
 def eq1(k1, k2, k3, k4, s0, g) -> float:
-    return k1*s0 - k2*g + k3*g**2 / (k4**2 + g**2)
+    return k1*s0 - k4*g + k2*g**2 / (k3**2 + g**2)
 
 
 def simulation(k1, k2, k3, k4, s0, g0, delta_time, iteration, comment='sim1') -> List[float]:
     # パラメータ条件の表示
-    ic(k1, k2, k3, k4, s0, g0, delta_time, iteration, comment)
+    # ic(k1, k2, k3, k4, s0, g0, delta_time, iteration, comment)
 
     g = g0
     g_list = [0] * iteration
@@ -51,9 +51,9 @@ def multi_simulation(k1, k2, k3, k4, s0, g0, delta_time, iteration, comment='mul
         sim_param_list[list_index] = param
         g_multi_list[i] = simulation(
             *sim_param_list, delta_time, iteration, comment=comment + '_' + str(param))
-        ic(g_multi_list[i][-1])
+        # ic(g_multi_list[i][-1])
 
-        #plot_simulation(time_list,g_list,fig_name = 'sim1_hoge')
+        # plot_simulation(time_list,g_list,fig_name = 'sim1_hoge')
     return g_multi_list
 
 
@@ -82,40 +82,67 @@ def all_simulation(k1_list, k2_list, k3_list, k4_list, s0_list, g0_list, delta_t
             *sim_param_list, delta_time, iteration, comment=comment + '_' + str(param))
         ic(g_multi_list[i][-1])
 
-        #plot_simulation(time_list,g_list,fig_name = 'sim1_hoge')
+        # plot_simulation(time_list,g_list,fig_name = 'sim1_hoge')
     return g_multi_list
 
 
-def plot_curve(g_list, dgdt_list, fig_name='curve1') -> None:
-    plt.scatter(g_list, dgdt_list)
+def plot_curve(g_list, k1, k2, k3, k4, s_list, fig_name='curve1') -> None:
+    for s in s_list:
+        dgdt_list = [eq1(k1, k2, k3, k4, s, g) for g in g_list]
+        plt.scatter(g_list, dgdt_list, label="S = " + str(s))
     plt.xlabel('g')
     plt.ylabel('dg/dt')
+    plt.legend()
     plt.savefig(fig_name + '.pdf')
     plt.close()
 
 
-def solve_eq(k1, k2, k3, k4, s0) -> None:
+def solve_g(k1, k2, k3, k4, s0) -> None:
     sympy.var('k1,k2,k3,k4,s0,g')
     solve = sympy.solve(k1*s0 - k2*g + k3*g**2 / (k4**2 + g**2), g)
     sympy.init_printing()
+    for i, sol in enumerate(solve):
+        # sympy のバグ対応
+        if 1e-20 > sympy.Abs(sympy.im(sol)):
+            solve[i] = sympy.re(sol)
+            print(sol)
     ic(solve)
-    print("(gの解の個数)=", sum(1 if v >= 0 else 0 for v in solve))
+    try:
+        print("(gの解の個数)=", sum(1 if v >= 0 else 0 for v in solve))
+    except:
+        print("(gの解の個数)= 0 or 1")
+
+# gの値からsを取得
+
+
+def solve_s(k1, k2, k3, k4, g) -> List[float]:
+    sympy.var('k1,k2,k3,k4,s0,g')
+    solve = sympy.solve(k1*s0 - k4*g + k2*g**2 / (k3**2 + g**2), s0)
+    sympy.init_printing()
+    ic(solve)
+    print("(s0の解の候補)=", sum(1 if v >= 0 else 0 for v in solve))
+
+    return solve
 
 
 def main():
     # パラメータの設定(論文の値)
-    k1, k2, k3, k4 = 1, 0.4, 1, 1
+    k1, k2, k3, k4 = 1, 1, 1, 0.4
+
     # 初期条件の設定
-    s0, g0 = 0, 1
+    s0, g0 = 0.02, 0.1
+
     # dg/dt = 0の時の曲線 <- 論文の曲線と値を合わせるため
     g_list = [i * 0.01 for i in range(250)]
-    dgdt_list = [eq1(k1, k2, k3, k4, s0, g) for g in g_list]
-    plot_curve(g_list, dgdt_list)
+    s_list = [0, 0.02, 0.1]
+
+    plot_curve(g_list, k1, k2, k3, k4, s_list)
+
     # 解の個数を出力
-    solve_eq(k1, k2, k3, k4, s0)
+    solve_g(k1, k2, k3, k4, s0)
 
     # シミュレーションの条件の設定
-    delta_time, total_time = 0.01, 10
+    delta_time, total_time = 0.01, 20
     iteration = round(total_time / delta_time)
     time_list = [i * delta_time for i in range(iteration)]
 
@@ -125,35 +152,35 @@ def main():
     plot_simulation(time_list, g_list, fig_name='sim1')
 
     # gの初期値を変更してシミュレーション
-    g0_list = [1, 5, 10, 20]
+    g0_list = [0.01, 0.1, 1, 5]
     g_multi_list = multi_simulation(
         k1, k2, k3, k4, s0, g0_list, delta_time, iteration, comment='multi_sim_g0')
     plot_multi_simulation(time_list, g_multi_list, g0_list,
                           param_label='g0', fig_name='multi_sim_g0')
 
     # k1を変更してシミュレーション
-    k1_list = [1, 5, 10, 20]
-    g_multi_list = multi_simulation(
-        k1_list, k2, k3, k4, s0, g0, delta_time, iteration, comment='multi_sim_k1')
-    plot_multi_simulation(time_list, g_multi_list, k1_list,
-                          param_label='k1', fig_name='multi_sim_k1')
+    #k1_list = [1, 5, 10, 20]
+    # g_multi_list = multi_simulation(
+    #    k1_list, k2, k3, k4, s0, g0, delta_time, iteration, comment='multi_sim_k1')
+    # plot_multi_simulation(time_list, g_multi_list, k1_list,
+    #                      param_label='k1', fig_name='multi_sim_k1')
 
     # k2を変更してシミュレーション
-    k2_list = [1, 5, 10, 20]
+    k2_list = [0.1, 1, 5]
     g_multi_list = multi_simulation(
         k1, k2_list, k3, k4, s0, g0, delta_time, iteration, comment='multi_sim_k2')
     plot_multi_simulation(time_list, g_multi_list, k2_list,
                           param_label='k2', fig_name='multi_sim_k2')
 
     # k3を変更してシミュレーション
-    k3_list = [1, 5, 10, 20]
+    k3_list = [0.1, 1, 5]
     g_multi_list = multi_simulation(
         k1, k2, k3_list, k4, s0, g0, delta_time, iteration, comment='multi_sim_k3')
     plot_multi_simulation(time_list, g_multi_list, k3_list,
                           param_label='k3', fig_name='multi_sim_k3')
 
     # k4を変更してシミュレーション
-    k4_list = [1, 5, 10, 20]
+    k4_list = [0.1, 0.4, 1, 5]
     g_multi_list = multi_simulation(
         k1, k2, k3, k4_list, s0, g0, delta_time, iteration, comment='multi_sim_k4')
     plot_multi_simulation(time_list, g_multi_list, k4_list,
@@ -162,8 +189,10 @@ def main():
     # 全パラメータをバラバラに動かして検証
     """
     k1_list,k2_list,k3_list,k4_list,g0_list = [1,5],[1,5],[1,5],[1,5],[1,5]
-    g_all_list = all_simulation(k1_list,k2_list,k3_list,k4_list,list(s0),g0_list,delta_time,iteration,comment = 'multi_sim_all')
-    plot_multi_simulation(time_list,g_all_list,[i in range(32)],param_label = 'all' ,fig_name = 'multi_sim_all')
+    g_all_list = all_simulation(k1_list,k2_list,k3_list,k4_list,list(
+        s0),g0_list,delta_time,iteration,comment = 'multi_sim_all')
+    plot_multi_simulation(time_list,g_all_list,[i in range(
+        32)],param_label = 'all' ,fig_name = 'multi_sim_all')
     """
 
 
